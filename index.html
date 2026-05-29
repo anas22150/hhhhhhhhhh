@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🌍 Planet Clicker - أونلاين</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: radial-gradient(circle at 30% 10%, #0a0f2a, #030617);
+            font-family: 'Segoe UI', 'Tajawal', Tahoma, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .game-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 25px;
+            border: 1px solid #ffaa66;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            color: #ffdd99;
+            margin-bottom: 8px;
+        }
+        .sub {
+            text-align: center;
+            color: #aaccee;
+            margin-bottom: 25px;
+        }
+        .planet-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .planet {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at 30% 30%, #f4a261, #e76f51);
+            border-radius: 50%;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: 0.07s linear;
+            user-select: none;
+        }
+        .planet:active {
+            transform: scale(0.95);
+        }
+        .score-board {
+            background: #00000066;
+            border-radius: 60px;
+            padding: 12px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            color: #ffefb9;
+            font-weight: bold;
+        }
+        .players-list {
+            background: #0a1522aa;
+            border-radius: 40px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .player-card {
+            background: #1e2a3a;
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .player-card:hover {
+            background: #e67e22;
+            transform: scale(1.01);
+        }
+        .player-name {
+            font-weight: bold;
+            color: #ffdd99;
+        }
+        .player-points {
+            background: #00000066;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-family: monospace;
+        }
+        .send-hint {
+            font-size: 0.7rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .login-card {
+            background: #2c3e2f;
+            border-radius: 60px;
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #ffaa55;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 40px;
+            border: none;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .login-card button {
+            background: #e67e22;
+            width: 100%;
+            padding: 12px;
+            border-radius: 40px;
+            border: none;
+            font-weight: bold;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .error-msg {
+            color: #ffaaaa;
+            margin-top: 10px;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #88aacc;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .planet { width: 140px; height: 140px; font-size: 2rem; }
+            .score-board { font-size: 1.2rem; }
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <h2>🌍 Planet Clicker</h2>
+        <p>أدخل اسمك لبدء اللعب</p>
+        <input type="text" id="playerNameInput" placeholder="اسم اللاعب">
+        <button id="joinBtn">🚀 دخول</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+</div>
+
+<div id="gameArea" style="display:none;">
+    <div class="game-container">
+        <h1>🌍 Planet Clicker</h1>
+        <div class="sub">انقر على الكوكب لجمع النقاط | اضغط على اسم لاعب لإرسال نقاط</div>
+
+        <div class="planet-area">
+            <div class="planet" id="planetBtn">🌍</div>
+        </div>
+
+        <div class="score-board" id="myPoints">💰 نقاطي: 0</div>
+
+        <div class="players-list" id="playersList">
+            <div style="text-align:center; padding:20px;">⏳ جاري تحميل اللاعبين...</div>
+        </div>
+        <div class="send-hint">💡 اضغط على اسم أي لاعب لفتح نافذة إرسال النقاط</div>
+        <footer>⚡ النقاط تُحدث تلقائياً لدى الجميع | يمكنك إرسال نقاط للاعبين الآخرين</footer>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let myName = '';
+    let players = [];
+
+    // عناصر DOM
+    const loginScreen = document.getElementById('loginScreen');
+    const gameArea = document.getElementById('gameArea');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const joinBtn = document.getElementById('joinBtn');
+    const loginError = document.getElementById('loginError');
+    const planetBtn = document.getElementById('planetBtn');
+    const myPointsSpan = document.getElementById('myPoints');
+    const playersListDiv = document.getElementById('playersList');
+
+    // تحديث واجهة قائمة اللاعبين
+    function updatePlayersUI() {
+        if (!playersListDiv) return;
+        if (players.length === 0) {
+            playersListDiv.innerHTML = '<div style="text-align:center; padding:20px;">لا يوجد لاعبون آخرون</div>';
+            return;
+        }
+        playersListDiv.innerHTML = '';
+        players.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.innerHTML = `
+                <span class="player-name">👤 ${escapeHtml(p.name)}</span>
+                <span class="player-points">💰 ${p.points}</span>
+            `;
+            // إضافة حدث إرسال النقاط عند النقر على البطاقة (ما عدا اللاعب نفسه)
+            if (p.name !== myName) {
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const amount = prompt(`كم نقطة تريد إرسالها إلى ${p.name}؟`, '10');
+                    if (amount && !isNaN(amount) && parseInt(amount) > 0) {
+                        socket.emit('sendPoints', { targetName: p.name, amount: parseInt(amount) });
+                    } else if (amount !== null) {
+                        alert('أدخل رقماً صحيحاً أكبر من 0');
+                    }
+                });
+            } else {
+                card.style.opacity = '0.7';
+            }
+            playersListDiv.appendChild(card);
+        });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // تحديث نقاطي في الواجهة
+    function updateMyPoints(points) {
+        myPointsSpan.innerHTML = `💰 نقاطي: ${points}`;
+    }
+
+    // أحداث Socket.io
+    socket.on('updatePlayers', (playersList) => {
+        players = playersList;
+        const myPlayer = players.find(p => p.name === myName);
+        if (myPlayer) updateMyPoints(myPlayer.points);
+        updatePlayersUI();
+    });
+
+    socket.on('joined', (data) => {
+        updateMyPoints(data.points);
+    });
+
+    socket.on('joinError', (msg) => {
+        loginError.innerText = msg;
+    });
+
+    socket.on('error', (msg) => {
+        alert(msg);
+    });
+
+    socket.on('pointsSent', (data) => {
+        alert(`✅ تم إرسال ${data.amount} نقطة إلى ${data.to}`);
+    });
+
+    socket.on('receivedPoints', (data) => {
+        alert(`🎁 استلمت ${data.amount} نقطة من ${data.from}`);
+    });
+
+    // النقر على الكوكب
+    planetBtn.addEventListener('click', () => {
+        socket.emit('clickPlanet');
+    });
+
+    // تسجيل الدخول
+    function joinGame() {
+        const name = playerNameInput.value.trim();
+        if (!name) {
+            loginError.innerText = 'الرجاء إدخال اسم';
+            return;
+        }
+        myName = name;
+        socket.emit('join', name);
+    }
+
+    joinBtn.addEventListener('click', joinGame);
+    playerNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') joinGame();
+    });
+
+    // عند نجاح الانضمام (لا توجد رسالة مباشرة من join، لكن updatePlayers سيجلب البيانات)
+    // نعرض واجهة اللعبة عند أول تحديث للاعبين (بعد ثوانٍ)
+    let gameStarted = false;
+    socket.on('updatePlayers', () => {
+        if (!gameStarted && myName) {
+            gameStarted = true;
+            loginScreen.style.display = 'none';
+            gameArea.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>
